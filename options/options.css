@@ -82,6 +82,16 @@ h2 {
   font-size: 13px;
 }
 
+.add-row select {
+  border: 1px solid #d7dae3;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #fff;
+  max-width: 200px;
+}
+
 .btn {
   border: none;
   border-radius: 8px;

@@ -22,11 +22,16 @@ function setState(partial) {
   return chrome.storage.local.set(partial);
 }
 
+// Es wird ausschließlich maskiert, wenn die Domain explizit in
+// domainOverrides eingetragen wurde (Allowlist) UND nicht pausiert ist.
+function isActiveEntry(globalEnabled, override) {
+  return !!(globalEnabled && override && override.disabled !== true);
+}
+
 async function computeMaskForHost(hostname) {
   var state = await getState();
-  var override = state.domainOverrides[hostname] || {};
-  var active = state.globalEnabled && !override.disabled && !!hostname;
-  if (!active) return { active: false };
+  var override = state.domainOverrides[hostname];
+  if (!hostname || !isActiveEntry(state.globalEnabled, override)) return { active: false };
   var mask = TabMaskerCore.computeMask(hostname, override);
   return { active: true, name: mask.name, emoji: mask.emoji, color: mask.color };
 }
@@ -79,12 +84,14 @@ async function handleMessage(message, sender) {
       if (!hostname && sender.tab && sender.tab.url) {
         hostname = getHostname(sender.tab.url);
       }
-      var override = hostname ? (state.domainOverrides[hostname] || {}) : {};
-      var preview = hostname ? TabMaskerCore.computeMask(hostname, override) : null;
+      var override = hostname ? (state.domainOverrides[hostname] || null) : null;
+      var preview = hostname ? TabMaskerCore.computeMask(hostname, override || {}) : null;
       return {
         globalEnabled: state.globalEnabled,
         hostname: hostname,
         override: override,
+        inList: !!override,
+        masked: isActiveEntry(state.globalEnabled, override),
         preview: preview
       };
     }
@@ -133,18 +140,35 @@ async function handleMessage(message, sender) {
       return { ok: true };
     }
 
-    case "RESET_DOMAIN": {
+    case "CLEAR_CUSTOM": {
+      // Setzt Name/Icon/Seed einer bereits gelisteten Domain auf den
+      // automatisch generierten Standard zurück, ohne sie von der
+      // Maskierungsliste zu entfernen.
       var s4 = await getState();
       var overrides4 = Object.assign({}, s4.domainOverrides);
-      delete overrides4[message.hostname];
-      await setState({ domainOverrides: overrides4 });
+      var current4 = overrides4[message.hostname];
+      if (current4) {
+        overrides4[message.hostname] = { disabled: current4.disabled };
+        await setState({ domainOverrides: overrides4 });
+        await reloadTabsForHost(message.hostname);
+      }
+      return { ok: true };
+    }
+
+    case "RESET_DOMAIN": {
+      // Entfernt die Domain vollständig aus der Maskierungsliste
+      // (Allowlist) – sie wird danach nicht mehr maskiert.
+      var s5 = await getState();
+      var overrides5 = Object.assign({}, s5.domainOverrides);
+      delete overrides5[message.hostname];
+      await setState({ domainOverrides: overrides5 });
       await reloadTabsForHost(message.hostname);
       return { ok: true };
     }
 
     case "LIST_DOMAINS": {
-      var s5 = await getState();
-      return { globalEnabled: s5.globalEnabled, domainOverrides: s5.domainOverrides };
+      var s6 = await getState();
+      return { globalEnabled: s6.globalEnabled, domainOverrides: s6.domainOverrides };
     }
 
     default:

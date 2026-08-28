@@ -22,12 +22,13 @@ function render(state) {
   hostnames.forEach(function (hostname) {
     var override = state.domainOverrides[hostname] || {};
     var mask = TabMaskerCore.computeMask(hostname, override);
+    var paused = override.disabled === true;
 
     var tr = document.createElement("tr");
 
     var iconTd = document.createElement("td");
     iconTd.className = "icon-cell";
-    iconTd.textContent = override.disabled ? "🚫" : mask.emoji;
+    iconTd.textContent = paused ? "⏸" : mask.emoji;
     tr.appendChild(iconTd);
 
     var hostTd = document.createElement("td");
@@ -35,13 +36,13 @@ function render(state) {
     tr.appendChild(hostTd);
 
     var nameTd = document.createElement("td");
-    nameTd.textContent = override.disabled ? "–" : mask.name;
+    nameTd.textContent = mask.name;
     tr.appendChild(nameTd);
 
     var statusTd = document.createElement("td");
     var badge = document.createElement("span");
-    badge.className = "status-badge " + (override.disabled ? "disabled" : "active");
-    badge.textContent = override.disabled ? "Ausgeschlossen" : "Maskiert";
+    badge.className = "status-badge " + (paused ? "disabled" : "active");
+    badge.textContent = paused ? "Pausiert" : "Maskiert";
     statusTd.appendChild(badge);
     tr.appendChild(statusTd);
 
@@ -50,18 +51,18 @@ function render(state) {
     actions.className = "row-actions";
 
     var toggleBtn = document.createElement("button");
-    toggleBtn.textContent = override.disabled ? "Wieder aktivieren" : "Ausschließen";
+    toggleBtn.textContent = paused ? "Aktivieren" : "Pausieren";
     toggleBtn.addEventListener("click", function () {
-      sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: !override.disabled }).then(refresh);
+      sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: !paused }).then(refresh);
     });
     actions.appendChild(toggleBtn);
 
-    var resetBtn = document.createElement("button");
-    resetBtn.textContent = "Entfernen";
-    resetBtn.addEventListener("click", function () {
+    var removeBtn = document.createElement("button");
+    removeBtn.textContent = "Entfernen";
+    removeBtn.addEventListener("click", function () {
       sendMessage({ type: "RESET_DOMAIN", hostname: hostname }).then(refresh);
     });
-    actions.appendChild(resetBtn);
+    actions.appendChild(removeBtn);
 
     actionsTd.appendChild(actions);
     tr.appendChild(actionsTd);
@@ -78,25 +79,58 @@ qs("globalToggle").addEventListener("change", function (e) {
   sendMessage({ type: "SET_GLOBAL_ENABLED", enabled: e.target.checked }).then(refresh);
 });
 
-qs("excludeBtn").addEventListener("click", function () {
-  var raw = qs("excludeInput").value.trim();
-  if (!raw) return;
-
-  var hostname = raw;
-  if (raw.indexOf("://") !== -1) {
+function normalizeHostname(raw) {
+  var hostname = raw.trim();
+  if (!hostname) return "";
+  if (hostname.indexOf("://") !== -1) {
     try {
-      hostname = new URL(raw).hostname;
+      hostname = new URL(hostname).hostname;
     } catch (e) {
-      hostname = raw;
+      // Eingabe war keine gültige URL – als reinen Hostnamen weiterverwenden.
     }
   }
-  hostname = hostname.replace(/^www\./, "").split("/")[0];
+  return hostname.replace(/^www\./, "").split("/")[0];
+}
+
+function populatePresets() {
+  var select = qs("addPresetSelect");
+  TabMaskerCore.PRESETS.forEach(function (preset) {
+    var opt = document.createElement("option");
+    opt.value = preset.name;
+    opt.textContent = preset.emoji + " " + preset.name;
+    select.appendChild(opt);
+  });
+}
+
+qs("addBtn").addEventListener("click", function () {
+  var hostname = normalizeHostname(qs("addInput").value);
   if (!hostname) return;
 
-  sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: true }).then(function () {
-    qs("excludeInput").value = "";
+  var presetName = qs("addPresetSelect").value;
+  var preset = TabMaskerCore.PRESETS.filter(function (p) {
+    return p.name === presetName;
+  })[0];
+
+  var chain = sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: false });
+  if (preset) {
+    chain = chain.then(function () {
+      return sendMessage({ type: "SET_CUSTOM", hostname: hostname, name: preset.name, emoji: preset.emoji });
+    });
+  }
+
+  chain.then(function () {
+    qs("addInput").value = "";
+    qs("addPresetSelect").value = "";
     refresh();
   });
 });
 
+qs("addInput").addEventListener("keydown", function (e) {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    qs("addBtn").click();
+  }
+});
+
+populatePresets();
 refresh();

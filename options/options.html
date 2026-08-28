@@ -23,19 +23,29 @@
     </section>
 
     <section class="add-card">
-      <h2>Domain gezielt ausschließen</h2>
-      <p class="muted">Trage eine Domain ein, die nie maskiert werden soll (z. B. <code>example.com</code>).</p>
+      <h2>Domain zur Maskierung hinzufügen</h2>
+      <p class="muted">
+        Nur Domains in dieser Liste werden maskiert. Trage eine Domain ein (z. B. <code>example.com</code>),
+        um sie mit einem zufälligen Namen/Icon zu versehen.
+      </p>
       <div class="add-row">
-        <input type="text" id="excludeInput" placeholder="beispiel.de" />
-        <button id="excludeBtn" class="btn">Ausschließen</button>
+        <input type="text" id="addInput" placeholder="beispiel.de" />
+        <select id="addPresetSelect">
+          <option value="">Zufälliger Tarnname</option>
+        </select>
+        <button id="addBtn" class="btn">Hinzufügen</button>
       </div>
+      <p class="muted">
+        Ohne Vorlage bekommt die Domain automatisch einen zufälligen Fantasienamen (z. B. „Stiller Fuchs“).
+        Mit Vorlage wird stattdessen z. B. „Google“ oder „heise.de“ als Tarnname verwendet.
+      </p>
     </section>
 
     <section>
-      <h2>Angepasste Domains</h2>
+      <h2>Maskierte Domains</h2>
       <p class="muted">
-        Hier erscheinen Domains, die du im Popup deaktiviert, neu gewürfelt oder mit einem eigenen Namen/Icon
-        versehen hast.
+        Alle Domains, die aktuell auf der Maskierungsliste stehen. Domains, die hier nicht auftauchen,
+        werden nicht maskiert.
       </p>
       <table id="domainTable">
         <thead>
@@ -49,7 +59,7 @@
         </thead>
         <tbody id="domainTableBody"></tbody>
       </table>
-      <p id="emptyState" class="muted" hidden>Noch keine Domain angepasst.</p>
+      <p id="emptyState" class="muted" hidden>Noch keine Domain zur Liste hinzugefügt.</p>
     </section>
   </main>
 

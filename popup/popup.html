@@ -29,28 +29,43 @@
 
       <label class="row-toggle">
         <input type="checkbox" id="domainToggle" />
-        <span>Für diese Domain maskieren</span>
+        <span>Diese Domain maskieren (zur Liste hinzufügen)</span>
       </label>
 
-      <div class="actions">
-        <button id="randomizeBtn" class="btn">🎲 Neu würfeln</button>
-        <button id="resetBtn" class="btn btn-ghost">↺ Zurücksetzen</button>
-      </div>
+      <p class="hint" id="notListedHint">
+        Diese Domain steht noch nicht auf der Maskierungsliste. Nur Domains, die du hier
+        oder in den Einstellungen hinzufügst, werden maskiert.
+      </p>
 
-      <details class="custom-edit">
-        <summary>Eigenen Namen &amp; Icon festlegen</summary>
-        <div class="custom-fields">
-          <label>
-            Name
-            <input type="text" id="customName" maxlength="40" placeholder="z. B. Interner Bereich" />
-          </label>
-          <label>
-            Icon (Emoji)
-            <input type="text" id="customEmoji" maxlength="4" placeholder="🙂" />
-          </label>
-          <button id="saveCustomBtn" class="btn btn-primary">Übernehmen</button>
+      <div id="domainControls" hidden>
+        <div class="actions">
+          <button id="randomizeBtn" class="btn">🎲 Neu würfeln</button>
+          <button id="clearCustomBtn" class="btn btn-ghost">↺ Zurücksetzen</button>
         </div>
-      </details>
+
+        <details class="custom-edit">
+          <summary>Eigenen Namen &amp; Icon festlegen</summary>
+          <div class="custom-fields">
+            <label>
+              Vorlage (bekannte Seite nachahmen)
+              <select id="presetSelect">
+                <option value="">– eigene Eingabe –</option>
+              </select>
+            </label>
+            <label>
+              Name
+              <input type="text" id="customName" maxlength="40" placeholder="z. B. Interner Bereich" />
+            </label>
+            <label>
+              Icon (Emoji)
+              <input type="text" id="customEmoji" maxlength="8" placeholder="🙂" />
+            </label>
+            <button id="saveCustomBtn" class="btn btn-primary">Übernehmen</button>
+          </div>
+        </details>
+
+        <button id="removeBtn" class="btn btn-danger">🗑 Von Liste entfernen</button>
+      </div>
     </section>
 
     <p class="hint">Änderungen laden den betroffenen Tab neu, damit die Maskierung greift.</p>

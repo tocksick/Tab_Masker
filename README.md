@@ -6,18 +6,28 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
 
 ## Funktionen
 
-- **Automatische Maskierung**: Jede Domain bekommt beim ersten Besuch einen
-  zufälligen, aber deterministischen Fantasienamen (z. B. „Stiller Fuchs“) und ein
-  passendes Emoji-Icon als Favicon. Beim erneuten Besuch bleibt die Maskierung gleich.
+- **Allowlist-Prinzip**: Standardmäßig wird **keine** Domain maskiert. Nur
+  Domains, die du explizit im Popup oder in den Einstellungen hinzufügst,
+  bekommen einen Tarnnamen und ein Tarn-Icon.
+- **Aktuelle Seite maskieren**: Klick auf das Erweiterungssymbol öffnet das
+  Popup mit einem Schalter „Diese Domain maskieren“ – damit landet die aktuell
+  geöffnete Domain direkt auf der Maskierungsliste.
+- **Automatischer Tarnname**: Beim Hinzufügen bekommt eine Domain einen
+  zufälligen, aber deterministischen Fantasienamen (z. B. „Stiller Fuchs“) und
+  ein passendes Emoji-Icon. Beim erneuten Besuch bleibt die Maskierung gleich.
 - **Neu würfeln**: Über das Popup lässt sich pro Domain eine neue zufällige
   Name/Icon-Kombination erzeugen.
-- **Eigene Namen/Icons**: Name und Emoji lassen sich pro Domain frei festlegen.
-- **Domains ausschließen**: Einzelne Domains lassen sich dauerhaft von der
-  Maskierung ausnehmen (z. B. interne Tools, die man erkennen möchte).
+- **Vorlagen bekannter Seiten**: Statt eines Fantasienamens kann auch eine
+  Vorlage gewählt werden, die wie eine bekannte Seite aussieht (z. B.
+  „Google“, „google.de“, „heise.de“, „Wikipedia“, „Online-Banking“ …).
+- **Eigene Namen/Icons**: Name und Emoji lassen sich pro Domain auch frei per
+  Texteingabe festlegen.
+- **Pausieren/Entfernen**: Domains lassen sich vorübergehend pausieren (Maske
+  bleibt gespeichert) oder komplett von der Liste entfernen.
 - **Globaler Schalter**: Maskierung lässt sich mit einem Klick komplett
-  aktivieren/deaktivieren.
-- **Verwaltungsseite**: Übersicht aller angepassten Domains (deaktiviert,
-  umbenannt oder neu gewürfelt) inkl. Löschen/Zurücksetzen.
+  aktivieren/deaktivieren, ohne die Liste zu verlieren.
+- **Verwaltungsseite**: Übersicht aller Domains auf der Maskierungsliste inkl.
+  Status, Pausieren/Aktivieren und Entfernen.
 
 ## Installation (Entwicklermodus)
 

@@ -5,6 +5,16 @@ function qs(id) {
   return document.getElementById(id);
 }
 
+function populatePresets() {
+  var select = qs("presetSelect");
+  TabMaskerCore.PRESETS.forEach(function (preset) {
+    var opt = document.createElement("option");
+    opt.value = preset.name;
+    opt.textContent = preset.emoji + " " + preset.name;
+    select.appendChild(opt);
+  });
+}
+
 function getActiveTab() {
   return chrome.tabs.query({ active: true, currentWindow: true }).then(function (tabs) {
     return tabs[0];
@@ -47,18 +57,25 @@ function refresh() {
       qs("currentSite").classList.toggle("disabled", !supported);
       qs("domainToggle").disabled = !supported;
       qs("randomizeBtn").disabled = !supported;
-      qs("resetBtn").disabled = !supported;
+      qs("removeBtn").disabled = !supported;
       qs("saveCustomBtn").disabled = !supported;
 
       if (!supported) {
         qs("previewHost").textContent = "Nicht verfügbar auf dieser Seite";
         qs("previewName").textContent = "–";
         qs("previewIcon").textContent = "🚫";
+        qs("domainToggle").checked = false;
+        qs("domainControls").hidden = true;
+        qs("notListedHint").hidden = true;
         return;
       }
 
+      var inList = !!state.inList;
+      qs("domainToggle").checked = !!state.masked;
+      qs("domainControls").hidden = !inList;
+      qs("notListedHint").hidden = inList;
+
       var override = state.override || {};
-      qs("domainToggle").checked = !override.disabled;
       qs("customName").value = override.name || "";
       qs("customEmoji").value = override.emoji || "";
 
@@ -80,9 +97,23 @@ qs("randomizeBtn").addEventListener("click", function () {
   sendMessage({ type: "RANDOMIZE_DOMAIN", hostname: hostname }).then(refresh);
 });
 
-qs("resetBtn").addEventListener("click", function () {
+qs("clearCustomBtn").addEventListener("click", function () {
+  if (!hostname) return;
+  sendMessage({ type: "CLEAR_CUSTOM", hostname: hostname }).then(refresh);
+});
+
+qs("removeBtn").addEventListener("click", function () {
   if (!hostname) return;
   sendMessage({ type: "RESET_DOMAIN", hostname: hostname }).then(refresh);
+});
+
+qs("presetSelect").addEventListener("change", function (e) {
+  var preset = TabMaskerCore.PRESETS.filter(function (p) {
+    return p.name === e.target.value;
+  })[0];
+  if (!preset) return;
+  qs("customName").value = preset.name;
+  qs("customEmoji").value = preset.emoji;
 });
 
 qs("saveCustomBtn").addEventListener("click", function () {
@@ -97,4 +128,5 @@ qs("openOptions").addEventListener("click", function (e) {
   chrome.runtime.openOptionsPage();
 });
 
+populatePresets();
 refresh();
