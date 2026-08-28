@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Tab Masker</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="brand-icon">🎭</span>
+      <span class="brand-name">Tab Masker</span>
+    </div>
+    <label class="switch" title="Maskierung global aktivieren/deaktivieren">
+      <input type="checkbox" id="globalToggle" />
+      <span class="slider"></span>
+    </label>
+  </header>
+
+  <main>
+    <section class="current-site" id="currentSite">
+      <div class="preview">
+        <div class="preview-icon" id="previewIcon">🎭</div>
+        <div class="preview-text">
+          <div class="preview-name" id="previewName">–</div>
+          <div class="preview-host" id="previewHost">–</div>
+        </div>
+      </div>
+
+      <label class="row-toggle">
+        <input type="checkbox" id="domainToggle" />
+        <span>Für diese Domain maskieren</span>
+      </label>
+
+      <div class="actions">
+        <button id="randomizeBtn" class="btn">🎲 Neu würfeln</button>
+        <button id="resetBtn" class="btn btn-ghost">↺ Zurücksetzen</button>
+      </div>
+
+      <details class="custom-edit">
+        <summary>Eigenen Namen &amp; Icon festlegen</summary>
+        <div class="custom-fields">
+          <label>
+            Name
+            <input type="text" id="customName" maxlength="40" placeholder="z. B. Interner Bereich" />
+          </label>
+          <label>
+            Icon (Emoji)
+            <input type="text" id="customEmoji" maxlength="4" placeholder="🙂" />
+          </label>
+          <button id="saveCustomBtn" class="btn btn-primary">Übernehmen</button>
+        </div>
+      </details>
+    </section>
+
+    <p class="hint">Änderungen laden den betroffenen Tab neu, damit die Maskierung greift.</p>
+
+    <footer>
+      <a href="#" id="openOptions">Alle angepassten Domains verwalten</a>
+    </footer>
+  </main>
+
+  <script src="../common/mask.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

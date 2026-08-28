@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>Tab Masker – Einstellungen</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <header>
+    <span class="brand-icon">🎭</span>
+    <h1>Tab Masker – Einstellungen</h1>
+  </header>
+
+  <main>
+    <section class="global-card">
+      <label class="row-toggle">
+        <input type="checkbox" id="globalToggle" />
+        <span>Maskierung global aktiv</span>
+      </label>
+      <p class="muted">
+        Ist die Maskierung deaktiviert, zeigen alle Tabs wieder ihren echten Titel und ihr echtes Favicon.
+      </p>
+    </section>
+
+    <section class="add-card">
+      <h2>Domain gezielt ausschließen</h2>
+      <p class="muted">Trage eine Domain ein, die nie maskiert werden soll (z. B. <code>example.com</code>).</p>
+      <div class="add-row">
+        <input type="text" id="excludeInput" placeholder="beispiel.de" />
+        <button id="excludeBtn" class="btn">Ausschließen</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Angepasste Domains</h2>
+      <p class="muted">
+        Hier erscheinen Domains, die du im Popup deaktiviert, neu gewürfelt oder mit einem eigenen Namen/Icon
+        versehen hast.
+      </p>
+      <table id="domainTable">
+        <thead>
+          <tr>
+            <th>Icon</th>
+            <th>Domain</th>
+            <th>Maskierter Name</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="domainTableBody"></tbody>
+      </table>
+      <p id="emptyState" class="muted" hidden>Noch keine Domain angepasst.</p>
+    </section>
+  </main>
+
+  <script src="../common/mask.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
