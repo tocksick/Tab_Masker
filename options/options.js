@@ -153,6 +153,7 @@ function renderUpdateState(update) {
   var list = qs("changelogList");
   var statusText = qs("updateStatusText");
   var markSeenBtn = qs("markSeenBtn");
+  var installHint = qs("installUpdateHint");
 
   list.innerHTML = "";
 
@@ -173,10 +174,15 @@ function renderUpdateState(update) {
     });
     list.hidden = false;
     markSeenBtn.hidden = false;
-    statusText.textContent = update.changelog.length + " neue Änderung(en) seit deinem letzten Blick.";
+    installHint.hidden = false;
+    var count = update.changelog.length;
+    statusText.textContent = count === 1
+      ? "1 neue Änderung seit deinem letzten Blick."
+      : count + " neue Änderungen seit deinem letzten Blick.";
   } else {
     list.hidden = true;
     markSeenBtn.hidden = true;
+    installHint.hidden = true;
     statusText.textContent = update.lastChecked
       ? "Auf dem neuesten Stand (zuletzt geprüft: " + formatDate(new Date(update.lastChecked).toISOString()) + ")."
       : "Noch nicht geprüft.";
@@ -194,6 +200,10 @@ qs("checkUpdateBtn").addEventListener("click", function () {
 
 qs("markSeenBtn").addEventListener("click", function () {
   sendMessage({ type: "DISMISS_UPDATE" }).then(refreshUpdateState);
+});
+
+qs("openExtensionsPageBtn").addEventListener("click", function () {
+  chrome.tabs.create({ url: "chrome://extensions/?id=" + chrome.runtime.id });
 });
 
 populatePresets();

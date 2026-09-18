@@ -19,7 +19,22 @@
       </div>
       <p class="muted" id="updateStatusText">Noch nicht geprüft.</p>
       <ul id="changelogList" class="changelog-list" hidden></ul>
-      <button id="markSeenBtn" class="btn" hidden>Als gelesen markieren</button>
+
+      <div id="installUpdateHint" class="install-hint" hidden>
+        <p class="muted" style="margin-top: 0;">
+          Neuer Code liegt auf GitHub, wird aber aus Sicherheitsgründen von Chrome
+          <strong>nicht automatisch installiert</strong> (Erweiterungen im Entwicklermodus
+          dürfen sich nicht selbst aktualisieren). So holst du die Änderungen manuell:
+        </p>
+        <ol class="install-steps">
+          <li>Aktuelle Version von GitHub herunterladen (grüner „Code"-Button → „Download ZIP") und den alten Ordner damit ersetzen. <em>Nutzt du Git? Dann reicht <code>git pull</code>.</em></li>
+          <li>Unten auf „Erweiterungsseite öffnen" klicken.</li>
+          <li>Dort bei Tab Masker auf das 🔄-Symbol klicken, damit Chrome die neuen Dateien lädt.</li>
+        </ol>
+        <button id="openExtensionsPageBtn" class="btn btn-primary">Erweiterungsseite öffnen</button>
+      </div>
+
+      <button id="markSeenBtn" class="btn btn-ghost" hidden>Als gelesen markieren</button>
     </section>
 
     <section class="global-card">
