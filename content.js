@@ -20,31 +20,13 @@
     obs.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  function roundRect(ctx, x, y, w, h, r) {
-    ctx.beginPath();
-    ctx.moveTo(x + r, y);
-    ctx.arcTo(x + w, y, x + w, y + h, r);
-    ctx.arcTo(x + w, y + h, x, y + h, r);
-    ctx.arcTo(x, y + h, x, y, r);
-    ctx.arcTo(x, y, x + w, y, r);
-    ctx.closePath();
-  }
-
-  function buildFaviconDataUrl(emoji, color, size) {
+  function buildFaviconDataUrl(mask, size) {
     size = size || 64;
     var canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
     var ctx = canvas.getContext("2d");
-    roundRect(ctx, 0, 0, size, size, size * 0.22);
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.font =
-      Math.floor(size * 0.62) +
-      'px "Noto Color Emoji","Apple Color Emoji","Segoe UI Emoji",sans-serif';
-    ctx.fillText(emoji, size / 2, size * 0.56);
+    TabMaskerCore.renderIcon(ctx, mask, size);
     return canvas.toDataURL("image/png");
   }
 
@@ -94,7 +76,7 @@
   function applyMask(mask) {
     ensureHead(function () {
       currentMaskName = mask.name;
-      currentFaviconHref = buildFaviconDataUrl(mask.emoji, mask.color);
+      currentFaviconHref = buildFaviconDataUrl(mask, 64);
       reassert();
       watchForReverts();
 

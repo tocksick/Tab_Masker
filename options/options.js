@@ -28,7 +28,15 @@ function render(state) {
 
     var iconTd = document.createElement("td");
     iconTd.className = "icon-cell";
-    iconTd.textContent = paused ? "⏸" : mask.emoji;
+    if (paused) {
+      iconTd.textContent = "⏸";
+    } else {
+      var iconCanvas = document.createElement("canvas");
+      iconCanvas.width = 24;
+      iconCanvas.height = 24;
+      TabMaskerCore.renderIcon(iconCanvas.getContext("2d"), mask, 24);
+      iconTd.appendChild(iconCanvas);
+    }
     tr.appendChild(iconTd);
 
     var hostTd = document.createElement("td");
@@ -132,5 +140,62 @@ qs("addInput").addEventListener("keydown", function (e) {
   }
 });
 
+function formatDate(iso) {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleString("de-DE");
+  } catch (e) {
+    return "";
+  }
+}
+
+function renderUpdateState(update) {
+  var list = qs("changelogList");
+  var statusText = qs("updateStatusText");
+  var markSeenBtn = qs("markSeenBtn");
+
+  list.innerHTML = "";
+
+  if (update && update.changelog && update.changelog.length > 0) {
+    update.changelog.forEach(function (commit) {
+      var li = document.createElement("li");
+      var link = document.createElement("a");
+      link.href = commit.url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = commit.message;
+      li.appendChild(link);
+      var meta = document.createElement("span");
+      meta.className = "changelog-meta";
+      meta.textContent = " (" + commit.shortSha + (commit.date ? ", " + formatDate(commit.date) : "") + ")";
+      li.appendChild(meta);
+      list.appendChild(li);
+    });
+    list.hidden = false;
+    markSeenBtn.hidden = false;
+    statusText.textContent = update.changelog.length + " neue Änderung(en) seit deinem letzten Blick.";
+  } else {
+    list.hidden = true;
+    markSeenBtn.hidden = true;
+    statusText.textContent = update.lastChecked
+      ? "Auf dem neuesten Stand (zuletzt geprüft: " + formatDate(new Date(update.lastChecked).toISOString()) + ")."
+      : "Noch nicht geprüft.";
+  }
+}
+
+function refreshUpdateState() {
+  return sendMessage({ type: "GET_UPDATE_STATE" }).then(renderUpdateState);
+}
+
+qs("checkUpdateBtn").addEventListener("click", function () {
+  qs("updateStatusText").textContent = "Prüfe …";
+  sendMessage({ type: "CHECK_UPDATE_NOW" }).then(renderUpdateState);
+});
+
+qs("markSeenBtn").addEventListener("click", function () {
+  sendMessage({ type: "DISMISS_UPDATE" }).then(refreshUpdateState);
+});
+
 populatePresets();
 refresh();
+refreshUpdateState();

@@ -13,13 +13,16 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
   Popup mit einem Schalter „Diese Domain maskieren“ – damit landet die aktuell
   geöffnete Domain direkt auf der Maskierungsliste.
 - **Automatischer Tarnname**: Beim Hinzufügen bekommt eine Domain einen
-  zufälligen, aber deterministischen Fantasienamen (z. B. „Stiller Fuchs“) und
-  ein passendes Emoji-Icon. Beim erneuten Besuch bleibt die Maskierung gleich.
+  zufälligen, aber deterministischen Tarnnamen einer echten, bekannten Seite
+  (z. B. „Outlook“, „Google Docs“, „LinkedIn“). Für einige davon wird zusätzlich
+  eine an das echte Logo angelehnte, aber bewusst umgefärbte Icon-Form
+  gezeichnet – für alle anderen ein passendes Emoji. Beim erneuten Besuch
+  bleibt die Maskierung gleich.
 - **Neu würfeln**: Über das Popup lässt sich pro Domain eine neue zufällige
   Name/Icon-Kombination erzeugen.
-- **Vorlagen bekannter Seiten**: Statt eines Fantasienamens kann auch eine
-  Vorlage gewählt werden, die wie eine bekannte Seite aussieht (z. B.
-  „Google“, „google.de“, „heise.de“, „Wikipedia“, „Online-Banking“ …).
+- **Vorlagen bekannter Seiten**: Alternativ lässt sich gezielt eine Vorlage
+  wählen, die wie eine bekannte Seite aussieht (z. B. „Google“, „google.de“,
+  „heise.de“, „Wikipedia“, „Online-Banking“ …).
 - **Eigene Namen/Icons**: Name und Emoji lassen sich pro Domain auch frei per
   Texteingabe festlegen.
 - **Pausieren/Entfernen**: Domains lassen sich vorübergehend pausieren (Maske
@@ -28,6 +31,10 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
   aktivieren/deaktivieren, ohne die Liste zu verlieren.
 - **Verwaltungsseite**: Übersicht aller Domains auf der Maskierungsliste inkl.
   Status, Pausieren/Aktivieren und Entfernen.
+- **Update-Benachrichtigung**: Prüft in regelmäßigen Abständen (und beim
+  Browserstart), ob es auf GitHub neue Commits gibt. Falls ja, gibt es eine
+  Desktop-Benachrichtigung, einen Hinweis im Popup und ein Änderungsprotokoll
+  (mit Link zum jeweiligen Commit) auf der Einstellungsseite.
 
 ## Installation (Entwicklermodus)
 
@@ -54,7 +61,10 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
   geändert).
 - `background.js`: Service Worker, verwaltet Einstellungen in
   `chrome.storage.local` und beantwortet Nachrichten von Content-Script,
-  Popup und Optionsseite.
+  Popup und Optionsseite. Prüft zusätzlich per `chrome.alarms` alle 6 Stunden
+  (und beim Browserstart) über die öffentliche GitHub-API, ob es neue Commits
+  im Repository gibt, und zeigt bei Bedarf eine Benachrichtigung samt
+  Änderungsprotokoll an.
 - `content.js`: Läuft auf jeder Seite (`document_start`), setzt
   `document.title` sowie ein per `<canvas>` generiertes Favicon
   (Data-URL) und überwacht per `MutationObserver`, ob die Seite selbst Titel
@@ -68,6 +78,14 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
   Änderungen.
 - `host_permissions: <all_urls>`: Notwendig, damit das Content-Script auf allen
   Seiten Titel und Favicon anpassen kann.
+- `alarms`: Für den periodischen Update-Check im Hintergrund.
+- `notifications`: Für die Desktop-Benachrichtigung bei neuen Commits.
 
-Es werden keine Daten an externe Server gesendet; alles bleibt lokal im Browser
-(`chrome.storage.local`).
+**Hinweis zur Privatsphäre**: Bis auf eine Ausnahme werden keine Daten an
+externe Server gesendet; alles bleibt lokal im Browser (`chrome.storage.local`).
+Die Ausnahme ist der Update-Check: dafür ruft die Erweiterung periodisch die
+öffentliche GitHub-API (`api.github.com`) auf, um zu prüfen, ob es neue Commits
+im Tab-Masker-Repository gibt (keine Übermittlung eigener Daten, nur ein
+lesender Abruf). Wer das nicht möchte, kann die Berechtigungen `alarms` und
+`notifications` in `chrome://extensions` entfernen bzw. die Erweiterung
+entsprechend anpassen.

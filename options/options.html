@@ -12,6 +12,16 @@
   </header>
 
   <main>
+    <section class="update-card">
+      <div class="update-card-header">
+        <h2>Was gibt's Neues</h2>
+        <button id="checkUpdateBtn" class="btn btn-ghost">🔄 Jetzt prüfen</button>
+      </div>
+      <p class="muted" id="updateStatusText">Noch nicht geprüft.</p>
+      <ul id="changelogList" class="changelog-list" hidden></ul>
+      <button id="markSeenBtn" class="btn" hidden>Als gelesen markieren</button>
+    </section>
+
     <section class="global-card">
       <label class="row-toggle">
         <input type="checkbox" id="globalToggle" />
@@ -36,8 +46,9 @@
         <button id="addBtn" class="btn">Hinzufügen</button>
       </div>
       <p class="muted">
-        Ohne Vorlage bekommt die Domain automatisch einen zufälligen Fantasienamen (z. B. „Stiller Fuchs“).
-        Mit Vorlage wird stattdessen z. B. „Google“ oder „heise.de“ als Tarnname verwendet.
+        Ohne Vorlage bekommt die Domain automatisch einen zufälligen, aber realistischen Tarnnamen
+        (z. B. „Outlook“ oder „Google Docs“) inklusive passender, umgefärbter Logo-Form.
+        Mit Vorlage legst du stattdessen gezielt einen bestimmten Tarnnamen fest.
       </p>
     </section>
 

@@ -2,6 +2,121 @@ importScripts("common/mask.js");
 
 var DEFAULT_STATE = { globalEnabled: true, domainOverrides: {} };
 
+// --- Update-Check: benachrichtigt, wenn auf GitHub neue Commits liegen ---
+
+var GITHUB_REPO = "tocksick/Tab_Masker";
+var UPDATE_CHECK_ALARM = "tabmasker-update-check";
+var UPDATE_CHECK_INTERVAL_MINUTES = 360; // alle 6 Stunden
+var UPDATE_NOTIFICATION_ID = "tabmasker-update";
+
+var DEFAULT_UPDATE_STATE = {
+  lastSeenSha: null, // zuletzt vom Nutzer bestätigter Stand
+  latestSha: null, // zuletzt auf GitHub gesehener Stand
+  changelog: [], // Commits zwischen lastSeenSha und latestSha
+  lastChecked: null
+};
+
+async function getUpdateState() {
+  var data = await chrome.storage.local.get(DEFAULT_UPDATE_STATE);
+  return Object.assign({}, DEFAULT_UPDATE_STATE, data);
+}
+
+function setUpdateState(partial) {
+  return chrome.storage.local.set(partial);
+}
+
+async function fetchLatestSha() {
+  var res = await fetch("https://api.github.com/repos/" + GITHUB_REPO + "/commits?per_page=1");
+  if (!res.ok) throw new Error("GitHub API " + res.status);
+  var data = await res.json();
+  return data && data[0] ? data[0].sha : null;
+}
+
+async function fetchChangelog(baseSha, headSha) {
+  var res = await fetch(
+    "https://api.github.com/repos/" + GITHUB_REPO + "/compare/" + baseSha + "..." + headSha
+  );
+  if (!res.ok) throw new Error("GitHub API " + res.status);
+  var data = await res.json();
+  var commits = data.commits || [];
+  return commits
+    .map(function (c) {
+      var fullMessage = (c.commit && c.commit.message) || "";
+      return {
+        sha: c.sha,
+        shortSha: c.sha.slice(0, 7),
+        message: fullMessage.split("\n")[0],
+        date: c.commit && c.commit.author ? c.commit.author.date : null,
+        url: c.html_url
+      };
+    })
+    .reverse(); // älteste zuerst
+}
+
+async function checkForUpdate() {
+  var state = await getUpdateState();
+  try {
+    var latestSha = await fetchLatestSha();
+    await setUpdateState({ lastChecked: Date.now() });
+    if (!latestSha) return getUpdateState();
+
+    if (!state.lastSeenSha) {
+      // Erster Lauf: nur Ausgangsstand merken, noch nicht benachrichtigen.
+      await setUpdateState({ lastSeenSha: latestSha, latestSha: latestSha, changelog: [] });
+      return getUpdateState();
+    }
+
+    if (latestSha === state.latestSha) {
+      return getUpdateState();
+    }
+
+    var changelog = await fetchChangelog(state.lastSeenSha, latestSha);
+    await setUpdateState({ latestSha: latestSha, changelog: changelog });
+
+    if (changelog.length > 0) {
+      await chrome.action.setBadgeText({ text: String(changelog.length) });
+      await chrome.action.setBadgeBackgroundColor({ color: "#dc2626" });
+      chrome.notifications.create(UPDATE_NOTIFICATION_ID, {
+        type: "basic",
+        iconUrl: "icons/icon128.png",
+        title: "Tab Masker: Update verfügbar",
+        message:
+          changelog.length + " neue Änderung" + (changelog.length === 1 ? "" : "en") +
+          " auf GitHub. Klicken für das Änderungsprotokoll.",
+        priority: 1
+      });
+    }
+    return getUpdateState();
+  } catch (e) {
+    console.warn("Tab Masker Update-Check fehlgeschlagen:", e);
+    return state;
+  }
+}
+
+async function dismissUpdate() {
+  var state = await getUpdateState();
+  await setUpdateState({ lastSeenSha: state.latestSha, changelog: [] });
+  await chrome.action.setBadgeText({ text: "" });
+  return getUpdateState();
+}
+
+chrome.notifications.onClicked.addListener(function (notificationId) {
+  if (notificationId === UPDATE_NOTIFICATION_ID) {
+    chrome.runtime.openOptionsPage();
+    chrome.notifications.clear(notificationId);
+  }
+});
+
+chrome.alarms.onAlarm.addListener(function (alarm) {
+  if (alarm.name === UPDATE_CHECK_ALARM) {
+    checkForUpdate();
+  }
+});
+
+chrome.runtime.onStartup.addListener(function () {
+  checkForUpdate();
+});
+
 function getHostname(url) {
   try {
     return new URL(url).hostname;
@@ -33,7 +148,14 @@ async function computeMaskForHost(hostname) {
   var override = state.domainOverrides[hostname];
   if (!hostname || !isActiveEntry(state.globalEnabled, override)) return { active: false };
   var mask = TabMaskerCore.computeMask(hostname, override);
-  return { active: true, name: mask.name, emoji: mask.emoji, color: mask.color };
+  return {
+    active: true,
+    name: mask.name,
+    emoji: mask.emoji,
+    color: mask.color,
+    logoShape: mask.logoShape,
+    fgColor: mask.fgColor
+  };
 }
 
 async function reloadTabsForHost(hostname) {
@@ -60,6 +182,8 @@ chrome.runtime.onInstalled.addListener(async function () {
   if (data.globalEnabled === undefined) {
     await setState(DEFAULT_STATE);
   }
+  chrome.alarms.create(UPDATE_CHECK_ALARM, { periodInMinutes: UPDATE_CHECK_INTERVAL_MINUTES });
+  checkForUpdate();
 });
 
 chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
@@ -169,6 +293,31 @@ async function handleMessage(message, sender) {
     case "LIST_DOMAINS": {
       var s6 = await getState();
       return { globalEnabled: s6.globalEnabled, domainOverrides: s6.domainOverrides };
+    }
+
+    case "GET_UPDATE_STATE": {
+      var u1 = await getUpdateState();
+      return {
+        hasUpdate: u1.changelog.length > 0,
+        changelog: u1.changelog,
+        lastChecked: u1.lastChecked,
+        repo: GITHUB_REPO
+      };
+    }
+
+    case "CHECK_UPDATE_NOW": {
+      var u2 = await checkForUpdate();
+      return {
+        hasUpdate: u2.changelog.length > 0,
+        changelog: u2.changelog,
+        lastChecked: u2.lastChecked,
+        repo: GITHUB_REPO
+      };
+    }
+
+    case "DISMISS_UPDATE": {
+      await dismissUpdate();
+      return { ok: true };
     }
 
     default:

@@ -38,9 +38,29 @@ function sendMessage(message) {
 }
 
 function renderPreview(mask) {
-  qs("previewIcon").textContent = mask && mask.emoji ? mask.emoji : "🎭";
+  var iconEl = qs("previewIcon");
+  iconEl.innerHTML = "";
+  if (mask && mask.color) {
+    var canvas = document.createElement("canvas");
+    canvas.width = 42;
+    canvas.height = 42;
+    TabMaskerCore.renderIcon(canvas.getContext("2d"), mask, 42);
+    iconEl.appendChild(canvas);
+  } else {
+    iconEl.textContent = "🎭";
+  }
   qs("previewName").textContent = mask && mask.name ? mask.name : hostname || "Keine Domain erkannt";
   qs("previewHost").textContent = hostname || "";
+}
+
+function refreshUpdateBanner() {
+  return sendMessage({ type: "GET_UPDATE_STATE" }).then(function (update) {
+    var hasUpdate = !!(update && update.hasUpdate);
+    qs("updateBanner").hidden = !hasUpdate;
+    if (hasUpdate) {
+      qs("updateCount").textContent = update.changelog.length;
+    }
+  });
 }
 
 function refresh() {
@@ -128,5 +148,15 @@ qs("openOptions").addEventListener("click", function (e) {
   chrome.runtime.openOptionsPage();
 });
 
+qs("viewChangelogLink").addEventListener("click", function (e) {
+  e.preventDefault();
+  chrome.runtime.openOptionsPage();
+});
+
+qs("dismissUpdateBtn").addEventListener("click", function () {
+  sendMessage({ type: "DISMISS_UPDATE" }).then(refreshUpdateBanner);
+});
+
 populatePresets();
 refresh();
+refreshUpdateBanner();

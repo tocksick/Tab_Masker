@@ -60,6 +60,7 @@ main {
   background: #eef0ff;
   border-radius: 9px;
   flex: none;
+  overflow: hidden;
 }
 
 .preview-text {
@@ -184,6 +185,37 @@ main {
   font-size: 11px;
   color: #8a8f9c;
   margin: 10px 2px 4px;
+}
+
+.update-banner {
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+  color: #92400e;
+}
+
+.update-banner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+
+.update-banner a {
+  color: #92400e;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: #92400e;
+  font-size: 11.5px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
 }
 
 footer {
