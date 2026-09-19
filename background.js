@@ -177,12 +177,22 @@ async function reloadAllTabs() {
   });
 }
 
-chrome.runtime.onInstalled.addListener(async function () {
+chrome.runtime.onInstalled.addListener(async function (details) {
   var data = await chrome.storage.local.get(null);
   if (data.globalEnabled === undefined) {
     await setState(DEFAULT_STATE);
   }
   chrome.alarms.create(UPDATE_CHECK_ALARM, { periodInMinutes: UPDATE_CHECK_INTERVAL_MINUTES });
+
+  if (details.reason === "update") {
+    // onInstalled mit reason "update" feuert auch beim manuellen Reload einer
+    // unpacked Extension in chrome://extensions -- also genau dann, wenn der
+    // Nutzer frischen Code (z.B. nach git pull) geladen hat. Das ist die
+    // eigentliche Bestätigung "gesehen", nicht ein separater Button-Klick.
+    // Ohne das hier zu leeren, würde ein alter Changelog-Eintrag ewig
+    // weiterhängen, selbst wenn der Code ihn längst enthält.
+    await dismissUpdate();
+  }
   checkForUpdate();
 });
 

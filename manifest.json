@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Tab Masker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Maskiert Domainnamen und Favicons in Tabs mit zufälligen, pro Domain konsistenten Namen und Icons – ideal für Screensharing oder öffentliche Bildschirme.",
   "icons": {
     "16": "icons/icon16.png",
