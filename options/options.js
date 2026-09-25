@@ -10,8 +10,26 @@ function sendMessage(message) {
   });
 }
 
+// Hosts ohne Zugriffsfreigabe aus dem letzten render() – wird synchron im
+// Klick-Handler gebraucht, weil permissions.request eine Nutzeraktion verlangt.
+var missingHosts = [];
+
+function requestHostAccess(hostnames) {
+  var origins = hostnames
+    .map(function (h) { return TabMaskerCore.hostPattern(h); })
+    .filter(Boolean);
+  if (origins.length === 0) return Promise.resolve(false);
+  return chrome.permissions.request({ origins: origins }).catch(function () {
+    return false;
+  });
+}
+
 function render(state) {
   qs("globalToggle").checked = !!state.globalEnabled;
+
+  missingHosts = state.missingPermissions || [];
+  qs("permissionBanner").hidden = missingHosts.length === 0;
+  qs("missingCount").textContent = missingHosts.length;
 
   var body = qs("domainTableBody");
   body.innerHTML = "";
@@ -23,6 +41,7 @@ function render(state) {
     var override = state.domainOverrides[hostname] || {};
     var mask = TabMaskerCore.computeMask(hostname, override);
     var paused = override.disabled === true;
+    var noAccess = missingHosts.indexOf(hostname) !== -1;
 
     var tr = document.createElement("tr");
 
@@ -49,14 +68,23 @@ function render(state) {
 
     var statusTd = document.createElement("td");
     var badge = document.createElement("span");
-    badge.className = "status-badge " + (paused ? "disabled" : "active");
-    badge.textContent = paused ? "Pausiert" : "Maskiert";
+    badge.className = "status-badge " + (paused || noAccess ? "disabled" : "active");
+    badge.textContent = noAccess ? "Kein Zugriff" : paused ? "Pausiert" : "Maskiert";
     statusTd.appendChild(badge);
     tr.appendChild(statusTd);
 
     var actionsTd = document.createElement("td");
     var actions = document.createElement("div");
     actions.className = "row-actions";
+
+    if (noAccess) {
+      var grantBtn = document.createElement("button");
+      grantBtn.textContent = "Zugriff erteilen";
+      grantBtn.addEventListener("click", function () {
+        requestHostAccess([hostname]).then(refresh);
+      });
+      actions.appendChild(grantBtn);
+    }
 
     var toggleBtn = document.createElement("button");
     toggleBtn.textContent = paused ? "Aktivieren" : "Pausieren";
@@ -97,7 +125,7 @@ function normalizeHostname(raw) {
       // Eingabe war keine gültige URL – als reinen Hostnamen weiterverwenden.
     }
   }
-  return hostname.replace(/^www\./, "").split("/")[0];
+  return hostname.replace(/^www\./, "").split("/")[0].split(":")[0].toLowerCase();
 }
 
 function populatePresets() {
@@ -119,6 +147,7 @@ qs("addBtn").addEventListener("click", function () {
     return p.name === presetName;
   })[0];
 
+  var granted = requestHostAccess([hostname]);
   var chain = sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: false });
   if (preset) {
     chain = chain.then(function () {
@@ -126,11 +155,15 @@ qs("addBtn").addEventListener("click", function () {
     });
   }
 
-  chain.then(function () {
+  Promise.all([granted, chain]).then(function () {
     qs("addInput").value = "";
     qs("addPresetSelect").value = "";
     refresh();
   });
+});
+
+qs("grantAllBtn").addEventListener("click", function () {
+  requestHostAccess(missingHosts).then(refresh);
 });
 
 qs("addInput").addEventListener("keydown", function (e) {

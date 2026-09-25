@@ -87,6 +87,7 @@ function refresh() {
         qs("domainToggle").checked = false;
         qs("domainControls").hidden = true;
         qs("notListedHint").hidden = true;
+        qs("permissionHint").hidden = true;
         return;
       }
 
@@ -94,6 +95,7 @@ function refresh() {
       qs("domainToggle").checked = !!state.masked;
       qs("domainControls").hidden = !inList;
       qs("notListedHint").hidden = inList;
+      qs("permissionHint").hidden = !inList || !!state.hasPermission;
 
       var override = state.override || {};
       qs("customName").value = override.name || "";
@@ -107,9 +109,28 @@ qs("globalToggle").addEventListener("change", function (e) {
   sendMessage({ type: "SET_GLOBAL_ENABLED", enabled: e.target.checked }).then(refresh);
 });
 
+// Fragt den Zugriff auf die aktuelle Domain an. Muss synchron im
+// Klick-Handler aufgerufen werden (Chrome verlangt eine Nutzeraktion).
+// Das Popup kann sich dabei schließen – der Background-Worker reagiert
+// deshalb selbst auf permissions.onAdded.
+function requestHostAccess() {
+  var pattern = TabMaskerCore.hostPattern(hostname);
+  if (!pattern) return Promise.resolve(false);
+  return chrome.permissions.request({ origins: [pattern] }).catch(function () {
+    return false;
+  });
+}
+
 qs("domainToggle").addEventListener("change", function (e) {
   if (!hostname) return;
-  sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: !e.target.checked }).then(refresh);
+  var granted = e.target.checked ? requestHostAccess() : Promise.resolve();
+  var saved = sendMessage({ type: "TOGGLE_DOMAIN", hostname: hostname, disabled: !e.target.checked });
+  Promise.all([granted, saved]).then(refresh);
+});
+
+qs("grantAccessBtn").addEventListener("click", function () {
+  if (!hostname) return;
+  requestHostAccess().then(refresh);
 });
 
 qs("randomizeBtn").addEventListener("click", function () {

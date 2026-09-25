@@ -402,8 +402,18 @@
     };
   }
 
+  // Match-Pattern für genau einen Hostnamen (z. B. "*://example.com/*").
+  // Wird für die Berechtigungsanfrage und die Content-Script-Registrierung
+  // genutzt, damit die Erweiterung nur auf gelisteten Domains läuft.
+  // Gibt null zurück, wenn der Hostname kein gültiges Muster ergibt.
+  function hostPattern(hostname) {
+    if (!hostname || !/^[a-z0-9.-]+$/i.test(hostname)) return null;
+    return "*://" + hostname.toLowerCase() + "/*";
+  }
+
   global.TabMaskerCore = {
     computeMask: computeMask,
+    hostPattern: hostPattern,
     renderIcon: renderIcon,
     drawLogoShape: drawLogoShape,
     hashString: hashString,

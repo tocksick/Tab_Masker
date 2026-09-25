@@ -65,7 +65,10 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
   (und beim Browserstart) über die öffentliche GitHub-API, ob es neue Commits
   im Repository gibt, und zeigt bei Bedarf eine Benachrichtigung samt
   Änderungsprotokoll an.
-- `content.js`: Läuft auf jeder Seite (`document_start`), setzt
+- `content.js`: Läuft **nur auf Domains der Maskierungsliste**, für die du
+  den Zugriff freigegeben hast. `background.js` registriert es dafür
+  dynamisch per `chrome.scripting.registerContentScripts` (`document_start`),
+  setzt
   `document.title` sowie ein per `<canvas>` generiertes Favicon
   (Data-URL) und überwacht per `MutationObserver`, ob die Seite selbst Titel
   oder Favicon ändert, um die Maskierung dauerhaft aufrechtzuerhalten.
@@ -73,19 +76,47 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
 
 ## Berechtigungen
 
-- `storage`: Speichern der Einstellungen pro Domain.
-- `tabs`: Erkennen der aktuellen Tab-Domain und Neuladen betroffener Tabs nach
-  Änderungen.
-- `host_permissions: <all_urls>`: Notwendig, damit das Content-Script auf allen
-  Seiten Titel und Favicon anpassen kann.
-- `alarms`: Für den periodischen Update-Check im Hintergrund.
-- `notifications`: Für die Desktop-Benachrichtigung bei neuen Commits.
+Tab Masker hat **keinen pauschalen Zugriff auf Webseiten**. Der Zugriff wird
+pro Domain erst dann angefragt, wenn du sie zur Maskierungsliste hinzufügst –
+der Browser zeigt dabei einen eigenen Bestätigungsdialog. Entfernst du eine
+Domain von der Liste, gibt Tab Masker den Zugriff automatisch wieder ab. Alle
+aktuell erteilten Freigaben siehst du unter `chrome://extensions` →
+Tab Masker → Details → „Websitezugriff“.
 
-**Hinweis zur Privatsphäre**: Bis auf eine Ausnahme werden keine Daten an
-externe Server gesendet; alles bleibt lokal im Browser (`chrome.storage.local`).
-Die Ausnahme ist der Update-Check: dafür ruft die Erweiterung periodisch die
-öffentliche GitHub-API (`api.github.com`) auf, um zu prüfen, ob es neue Commits
-im Tab-Masker-Repository gibt (keine Übermittlung eigener Daten, nur ein
-lesender Abruf). Wer das nicht möchte, kann die Berechtigungen `alarms` und
-`notifications` in `chrome://extensions` entfernen bzw. die Erweiterung
-entsprechend anpassen.
+| Berechtigung | Wofür |
+|---|---|
+| `optional_host_permissions` (`*://*/*`) | Nur ein **Rahmen**: Innerhalb dessen fragt Tab Masker einzelne Domains an (z. B. `*://example.com/*`). Ohne deine Zustimmung ist keine Domain freigegeben. |
+| `scripting` | Content-Script nur für freigegebene Domains registrieren. |
+| `activeTab` | Das Popup erkennt die Domain des aktuellen Tabs, wenn du auf das Symbol klickst – ohne Zugriff auf deine übrigen Tabs oder den Verlauf. |
+| `storage` | Maskierungsliste und Einstellungen lokal speichern. |
+| `alarms` | Periodischer Update-Check im Hintergrund. |
+| `notifications` | Desktop-Benachrichtigung bei neuen Commits. |
+
+Zusätzlich setzt das Manifest eine strikte **Content Security Policy**:
+Es darf ausschließlich Code aus dem Erweiterungspaket selbst ausgeführt werden
+(`script-src 'self'`, kein `eval`, keine nachgeladenen Skripte), und
+Netzwerkverbindungen sind nur zu `api.github.com` erlaubt
+(`connect-src https://api.github.com`).
+
+## Datenschutz
+
+- **Keine Datensammlung, keine Telemetrie, keine Werbung.** Die
+  Maskierungsliste und alle Einstellungen liegen ausschließlich lokal in
+  `chrome.storage.local`.
+- **Einzige Netzwerkverbindung:** der Update-Check, ein lesender Abruf der
+  öffentlichen GitHub-API (`api.github.com/repos/tocksick/Tab_Masker/…`) alle
+  6 Stunden und beim Browserstart. Dabei werden keine Daten von dir
+  übermittelt – weder besuchte Seiten noch die Maskierungsliste. Die CSP
+  verhindert technisch Verbindungen zu anderen Servern.
+- **Was das Content-Script tut:** Auf freigegebenen Domains ändert es nur
+  `document.title` und das Favicon. Es liest keine Seiteninhalte,
+  Formulareingaben oder Cookies aus.
+- Der komplette Quellcode liegt in diesem Repository; es gibt keinen
+  minifizierten oder nachgeladenen Code.
+
+## Upgrade von Version 1.1.x
+
+Bis Version 1.1.x hatte Tab Masker festen Zugriff auf alle Webseiten. Ab 1.2
+wird der Zugriff pro Domain angefragt. Nach dem Update öffnet sich einmalig die
+Einstellungsseite: Ein Klick auf „Zugriff für alle gelisteten Domains
+erteilen“ genügt, damit deine bestehende Liste wieder maskiert wird.

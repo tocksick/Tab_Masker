@@ -37,6 +37,16 @@
       <button id="markSeenBtn" class="btn btn-ghost" hidden>Als gelesen markieren</button>
     </section>
 
+    <section class="update-card" id="permissionBanner" hidden>
+      <h2>⚠️ Zugriff fehlt</h2>
+      <p class="muted">
+        Für <strong id="missingCount">0</strong> Domain(s) auf deiner Liste hat Tab Masker keinen Zugriff
+        und kann sie deshalb nicht maskieren. Seit Version 1.2 fragt Tab Masker den Zugriff für jede
+        Domain einzeln an, statt pauschal alle Webseiten lesen zu dürfen.
+      </p>
+      <button id="grantAllBtn" class="btn btn-primary">Zugriff für alle gelisteten Domains erteilen</button>
+    </section>
+
     <section class="global-card">
       <label class="row-toggle">
         <input type="checkbox" id="globalToggle" />
@@ -52,6 +62,7 @@
       <p class="muted">
         Nur Domains in dieser Liste werden maskiert. Trage eine Domain ein (z. B. <code>example.com</code>),
         um sie mit einem zufälligen Namen/Icon zu versehen.
+        Der Browser fragt dabei einmalig, ob Tab Masker auf diese Domain zugreifen darf.
       </p>
       <div class="add-row">
         <input type="text" id="addInput" placeholder="beispiel.de" />

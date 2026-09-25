@@ -114,6 +114,7 @@ chrome.alarms.onAlarm.addListener(function (alarm) {
 });
 
 chrome.runtime.onStartup.addListener(function () {
+  syncContentScripts();
   checkForUpdate();
 });
 
@@ -168,14 +169,108 @@ async function reloadTabsForHost(hostname) {
   });
 }
 
-async function reloadAllTabs() {
+// Lädt alle Tabs gelisteter Domains neu. Ohne "tabs"-Berechtigung ist
+// tab.url ohnehin nur für Domains sichtbar, auf die wir Zugriff haben.
+async function reloadListedTabs() {
+  var state = await getState();
   var tabs = await chrome.tabs.query({});
   tabs.forEach(function (tab) {
-    if (tab.id && tab.url && /^https?:/.test(tab.url)) {
+    if (!tab.id || !tab.url) return;
+    if (state.domainOverrides[getHostname(tab.url)]) {
       chrome.tabs.reload(tab.id).catch(function () {});
     }
   });
 }
+
+// --- Zugriff nur auf gelistete Domains ---
+//
+// Die Erweiterung hat keinen festen Zugriff auf Webseiten. Für jede Domain
+// auf der Maskierungsliste wird der Zugriff einzeln beim Nutzer angefragt
+// (optional_host_permissions, siehe popup.js/options.js), und das
+// Content-Script wird dynamisch nur für diese Domains registriert.
+
+var CONTENT_SCRIPT_ID = "tabmasker-content";
+
+function hasHostPermission(hostname) {
+  var pattern = TabMaskerCore.hostPattern(hostname);
+  if (!pattern) return Promise.resolve(false);
+  return chrome.permissions.contains({ origins: [pattern] });
+}
+
+async function getMissingPermissionHosts() {
+  var state = await getState();
+  var missing = [];
+  for (var hostname of Object.keys(state.domainOverrides)) {
+    if (!(await hasHostPermission(hostname))) missing.push(hostname);
+  }
+  return missing;
+}
+
+async function doSyncContentScripts() {
+  var state = await getState();
+  var matches = [];
+  for (var hostname of Object.keys(state.domainOverrides)) {
+    if (!isActiveEntry(state.globalEnabled, state.domainOverrides[hostname])) continue;
+    if (await hasHostPermission(hostname)) {
+      matches.push(TabMaskerCore.hostPattern(hostname));
+    }
+  }
+
+  var registered = await chrome.scripting.getRegisteredContentScripts({ ids: [CONTENT_SCRIPT_ID] });
+  if (matches.length === 0) {
+    if (registered.length > 0) {
+      await chrome.scripting.unregisterContentScripts({ ids: [CONTENT_SCRIPT_ID] });
+    }
+    return;
+  }
+
+  var script = {
+    id: CONTENT_SCRIPT_ID,
+    matches: matches,
+    js: ["common/mask.js", "content.js"],
+    runAt: "document_start",
+    allFrames: false,
+    persistAcrossSessions: true
+  };
+  if (registered.length > 0) {
+    await chrome.scripting.updateContentScripts([script]);
+  } else {
+    await chrome.scripting.registerContentScripts([script]);
+  }
+}
+
+// Aufrufe nacheinander abarbeiten, damit sich parallele Änderungen nicht
+// gegenseitig die Registrierung überschreiben.
+var syncQueue = Promise.resolve();
+function syncContentScripts() {
+  syncQueue = syncQueue.then(doSyncContentScripts).catch(function (e) {
+    console.error("Tab Masker: Content-Script-Registrierung fehlgeschlagen:", e);
+  });
+  return syncQueue;
+}
+
+// Bis v1.1.x hatte die Erweiterung festen Zugriff auf alle Seiten. Falls
+// Chrome diesen breiten Zugriff nach dem Update noch als gewährt führt,
+// wird er entfernt; fehlende Einzelfreigaben werden danach auf der
+// Einstellungsseite nachgefragt.
+async function dropLegacyBroadAccess() {
+  var broad = { origins: ["*://*/*"] };
+  if (await chrome.permissions.contains(broad)) {
+    await chrome.permissions.remove(broad).catch(function () {});
+  }
+}
+
+chrome.permissions.onAdded.addListener(async function (permissions) {
+  await syncContentScripts();
+  (permissions.origins || []).forEach(function (origin) {
+    var m = /^\*:\/\/([^/]+)\/\*$/.exec(origin);
+    if (m) reloadTabsForHost(m[1]);
+  });
+});
+
+chrome.permissions.onRemoved.addListener(function () {
+  syncContentScripts();
+});
 
 chrome.runtime.onInstalled.addListener(async function (details) {
   var data = await chrome.storage.local.get(null);
@@ -192,6 +287,11 @@ chrome.runtime.onInstalled.addListener(async function (details) {
     // Ohne das hier zu leeren, würde ein alter Changelog-Eintrag ewig
     // weiterhängen, selbst wenn der Code ihn längst enthält.
     await dismissUpdate();
+    await dropLegacyBroadAccess();
+  }
+  await syncContentScripts();
+  if ((await getMissingPermissionHosts()).length > 0) {
+    chrome.runtime.openOptionsPage();
   }
   checkForUpdate();
 });
@@ -225,6 +325,7 @@ async function handleMessage(message, sender) {
         hostname: hostname,
         override: override,
         inList: !!override,
+        hasPermission: hostname ? await hasHostPermission(hostname) : false,
         masked: isActiveEntry(state.globalEnabled, override),
         preview: preview
       };
@@ -232,7 +333,8 @@ async function handleMessage(message, sender) {
 
     case "SET_GLOBAL_ENABLED": {
       await setState({ globalEnabled: !!message.enabled });
-      await reloadAllTabs();
+      await syncContentScripts();
+      await reloadListedTabs();
       return { ok: true };
     }
 
@@ -242,6 +344,7 @@ async function handleMessage(message, sender) {
       var current1 = overrides1[message.hostname] || {};
       overrides1[message.hostname] = Object.assign({}, current1, { disabled: !!message.disabled });
       await setState({ domainOverrides: overrides1 });
+      await syncContentScripts();
       await reloadTabsForHost(message.hostname);
       return { ok: true };
     }
@@ -257,6 +360,7 @@ async function handleMessage(message, sender) {
         emoji: ""
       });
       await setState({ domainOverrides: overrides2 });
+      await syncContentScripts();
       await reloadTabsForHost(message.hostname);
       return { ok: true };
     }
@@ -270,6 +374,7 @@ async function handleMessage(message, sender) {
         emoji: message.emoji !== undefined ? message.emoji : current3.emoji
       });
       await setState({ domainOverrides: overrides3 });
+      await syncContentScripts();
       await reloadTabsForHost(message.hostname);
       return { ok: true };
     }
@@ -284,6 +389,7 @@ async function handleMessage(message, sender) {
       if (current4) {
         overrides4[message.hostname] = { disabled: current4.disabled };
         await setState({ domainOverrides: overrides4 });
+        await syncContentScripts();
         await reloadTabsForHost(message.hostname);
       }
       return { ok: true };
@@ -296,13 +402,23 @@ async function handleMessage(message, sender) {
       var overrides5 = Object.assign({}, s5.domainOverrides);
       delete overrides5[message.hostname];
       await setState({ domainOverrides: overrides5 });
+      await syncContentScripts();
       await reloadTabsForHost(message.hostname);
+      // Zugriff auf die Domain wieder abgeben – er wird nicht mehr gebraucht.
+      var pattern5 = TabMaskerCore.hostPattern(message.hostname);
+      if (pattern5) {
+        await chrome.permissions.remove({ origins: [pattern5] }).catch(function () {});
+      }
       return { ok: true };
     }
 
     case "LIST_DOMAINS": {
       var s6 = await getState();
-      return { globalEnabled: s6.globalEnabled, domainOverrides: s6.domainOverrides };
+      return {
+        globalEnabled: s6.globalEnabled,
+        domainOverrides: s6.domainOverrides,
+        missingPermissions: await getMissingPermissionHosts()
+      };
     }
 
     case "GET_UPDATE_STATE": {

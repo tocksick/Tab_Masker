@@ -44,8 +44,16 @@
 
       <p class="hint" id="notListedHint">
         Diese Domain steht noch nicht auf der Maskierungsliste. Nur Domains, die du hier
-        oder in den Einstellungen hinzufügst, werden maskiert.
+        oder in den Einstellungen hinzufügst, werden maskiert. Beim Hinzufügen fragt der
+        Browser einmalig, ob Tab Masker auf diese Domain zugreifen darf.
       </p>
+
+      <div class="hint" id="permissionHint" hidden>
+        <p style="margin: 0 0 6px;">
+          ⚠️ Kein Zugriff auf diese Domain – ohne Freigabe kann Tab Masker den Tab nicht maskieren.
+        </p>
+        <button id="grantAccessBtn" class="btn btn-primary">Zugriff erteilen</button>
+      </div>
 
       <div id="domainControls" hidden>
         <div class="actions">
