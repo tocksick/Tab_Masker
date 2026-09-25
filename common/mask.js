@@ -33,12 +33,7 @@
     { name: "OneDrive", emoji: "☁️", color: "#0078d4" },
     { name: "LinkedIn", emoji: "💼", color: "#0a66c2" },
     { name: "Online-Banking", emoji: "🏦", color: "#1e3a8a" },
-    { name: "Wetter", emoji: "⛅", color: "#38bdf8" },
-    { name: "Intranet", emoji: "🗄️", color: "#475569" },
-    { name: "Dokumente", emoji: "📄", color: "#64748b" },
-    { name: "Notizen", emoji: "📝", color: "#eab308" },
-    { name: "Kalender", emoji: "📅", color: "#dc2626" },
-    { name: "Nachrichten", emoji: "📰", color: "#334155" }
+    { name: "Wetter", emoji: "⛅", color: "#38bdf8" }
   ];
 
   // Stark vereinfachte, selbst gezeichnete Icon-Formen (keine 1:1-Kopien der
