@@ -4,6 +4,16 @@ Chrome-Erweiterung (Manifest V3), die Domainnamen und Favicons in Browser-Tabs m
 zufälligen, aber pro Domain konsistenten Namen und Icons maskiert – praktisch für
 Screensharing, Präsentationen oder öffentliche Bildschirme.
 
+![Tableiste vorher und nachher: Reddit erscheint als „GitHub“, Telekom als „google.de“, Wikipedia als „IKEA“](docs/vorher-nachher.png)
+
+**So sieht es live aus** – Domain im Popup maskieren, neu würfeln, Vorlage wählen:
+
+![Demo: Tab Masker maskiert wetter.com über das Popup](docs/demo.gif)
+
+> **Hinweis:** Tab Masker ändert Titel und Favicon im **Tab**. Die Adressleiste
+> zeigt weiterhin die echte URL des aktiven Tabs – beim Bildschirmteilen also
+> am besten einen unverfänglichen Tab im Vordergrund haben.
+
 ## Funktionen
 
 - **Allowlist-Prinzip**: Standardmäßig wird **keine** Domain maskiert. Nur
