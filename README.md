@@ -120,3 +120,8 @@ Bis Version 1.1.x hatte Tab Masker festen Zugriff auf alle Webseiten. Ab 1.2
 wird der Zugriff pro Domain angefragt. Nach dem Update öffnet sich einmalig die
 Einstellungsseite: Ein Klick auf „Zugriff für alle gelisteten Domains
 erteilen“ genügt, damit deine bestehende Liste wieder maskiert wird.
+
+## Icon
+
+Das Erweiterungssymbol ist das 🎭-Emoji aus
+[Noto Color Emoji](https://github.com/googlefonts/noto-emoji) (Apache License 2.0).
