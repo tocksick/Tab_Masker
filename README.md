@@ -14,10 +14,11 @@ Screensharing, Präsentationen oder öffentliche Bildschirme.
   geöffnete Domain direkt auf der Maskierungsliste.
 - **Automatischer Tarnname**: Beim Hinzufügen bekommt eine Domain einen
   zufälligen, aber deterministischen Tarnnamen einer echten, bekannten Seite
-  (z. B. „Outlook“, „Google Docs“, „LinkedIn“). Für einige davon wird zusätzlich
-  eine an das echte Logo angelehnte, aber bewusst umgefärbte Icon-Form
-  gezeichnet – für alle anderen ein passendes Emoji. Beim erneuten Besuch
-  bleibt die Maskierung gleich.
+  (z. B. „Outlook“, „Google Docs“, „Steam“, „IKEA“). Als Icon wird das
+  **echte Favicon** dieser Seite verwendet, sofern der Browser es im Cache hat
+  (also die Seite schon einmal besucht wurde). Sonst zeichnet Tab Masker eine
+  vereinfachte Logo-Form in den Markenfarben bzw. ein passendes Emoji. Beim
+  erneuten Besuch bleibt die Maskierung gleich.
 - **Neu würfeln**: Über das Popup lässt sich pro Domain eine neue zufällige
   Name/Icon-Kombination erzeugen.
 - **Vorlagen bekannter Seiten**: Alternativ lässt sich gezielt eine Vorlage
@@ -91,12 +92,14 @@ Tab Masker → Details → „Websitezugriff“.
 | `storage` | Maskierungsliste und Einstellungen lokal speichern. |
 | `alarms` | Periodischer Update-Check im Hintergrund. |
 | `notifications` | Desktop-Benachrichtigung bei neuen Commits. |
+| `favicon` | Echte Favicons der Tarnseiten (z. B. amazon.de) aus dem **lokalen** Favicon-Cache des Browsers lesen. Es wird dafür nichts aus dem Internet geladen. |
 
 Zusätzlich setzt das Manifest eine strikte **Content Security Policy**:
 Es darf ausschließlich Code aus dem Erweiterungspaket selbst ausgeführt werden
 (`script-src 'self'`, kein `eval`, keine nachgeladenen Skripte), und
-Netzwerkverbindungen sind nur zu `api.github.com` erlaubt
-(`connect-src https://api.github.com`).
+Netzwerkverbindungen sind nur zu `api.github.com` sowie zur Erweiterung selbst
+(für den lokalen Favicon-Cache) erlaubt
+(`connect-src 'self' https://api.github.com`).
 
 ## Datenschutz
 

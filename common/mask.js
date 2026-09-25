@@ -11,39 +11,42 @@
   ];
 
   // Vorlagen: Tarnnamen, die wie bekannte Webseiten/Dienste aussehen.
-  // "color" ist die ungefähre echte Markenfarbe – dient als Ausgangspunkt
-  // für die automatische Umfärbung (siehe shiftHue), nicht als 1:1-Kopie.
+  // "url": echte Seite – deren Favicon wird aus dem Favicon-Cache des Browsers
+  //        übernommen, sofern die Seite dort schon einmal besucht wurde.
+  // "color"/"fg": Markenfarben für Hintergrund/Logo-Form, falls kein
+  //        gecachtes Favicon vorhanden ist (siehe LOGO_SHAPES).
   var PRESETS = [
-    { name: "Google", emoji: "🔍", color: "#4285f4" },
-    { name: "google.de", emoji: "🔍", color: "#4285f4" },
-    { name: "Google Mail", emoji: "✉️", color: "#ea4335" },
-    { name: "Google Docs", emoji: "📄", color: "#4285f4" },
-    { name: "Wikipedia", emoji: "📖", color: "#000000" },
-    { name: "YouTube", emoji: "▶️", color: "#ff0000" },
-    { name: "heise.de", emoji: "📰", color: "#ffffff" },
-    { name: "Heise Online", emoji: "📰", color: "#ffffff" },
-    { name: "Tagesschau", emoji: "📺", color: "#0a3a6b" },
-    { name: "Spiegel Online", emoji: "🗞️", color: "#e64415" },
-    { name: "GitHub", emoji: "🐙", color: "#24292e" },
-    { name: "GitLab", emoji: "🦊", color: "#fc6d26" },
-    { name: "Stack Overflow", emoji: "📚", color: "#f48024" },
-    { name: "Amazon", emoji: "📦", color: "#ff9900" },
-    { name: "Microsoft Teams", emoji: "👥", color: "#4b53bc" },
-    { name: "Outlook", emoji: "📧", color: "#0072c6" },
-    { name: "OneDrive", emoji: "☁️", color: "#0078d4" },
-    { name: "LinkedIn", emoji: "💼", color: "#0a66c2" },
+    { name: "Google", emoji: "🔍", color: "#4285f4", url: "https://www.google.com/" },
+    { name: "google.de", emoji: "🔍", color: "#4285f4", url: "https://www.google.de/" },
+    { name: "Google Mail", emoji: "✉️", color: "#ea4335", url: "https://mail.google.com/" },
+    { name: "Google Docs", emoji: "📄", color: "#4285f4", url: "https://docs.google.com/" },
+    { name: "Wikipedia", emoji: "📖", color: "#ffffff", fg: "#000000", url: "https://de.wikipedia.org/" },
+    { name: "YouTube", emoji: "▶️", color: "#ff0000", url: "https://www.youtube.com/" },
+    { name: "heise.de", emoji: "📰", color: "#ffffff", url: "https://www.heise.de/" },
+    { name: "Heise Online", emoji: "📰", color: "#ffffff", url: "https://www.heise.de/" },
+    { name: "Tagesschau", emoji: "📺", color: "#0a3a6b", url: "https://www.tagesschau.de/" },
+    { name: "Spiegel Online", emoji: "🗞️", color: "#e64415", url: "https://www.spiegel.de/" },
+    { name: "GitHub", emoji: "🐙", color: "#24292e", url: "https://github.com/" },
+    { name: "GitLab", emoji: "🦊", color: "#fc6d26", url: "https://gitlab.com/" },
+    { name: "Stack Overflow", emoji: "📚", color: "#ffffff", fg: "#f48024", url: "https://stackoverflow.com/" },
+    { name: "Amazon", emoji: "📦", color: "#232f3e", fg: "#ff9900", url: "https://www.amazon.de/" },
+    { name: "Outlook", emoji: "📧", color: "#0072c6", url: "https://outlook.live.com/" },
+    { name: "OneDrive", emoji: "☁️", color: "#0078d4", url: "https://onedrive.live.com/" },
+    { name: "LinkedIn", emoji: "💼", color: "#0a66c2", url: "https://www.linkedin.com/" },
+    { name: "Steam", emoji: "🎮", color: "#171a21", url: "https://store.steampowered.com/" },
+    { name: "Claude", emoji: "✳️", color: "#f0eee6", fg: "#d97757", url: "https://claude.ai/" },
+    { name: "IKEA", emoji: "🛋️", color: "#0058a3", fg: "#ffda1a", url: "https://www.ikea.com/de/de/" },
     { name: "Online-Banking", emoji: "🏦", color: "#1e3a8a" },
     { name: "Wetter", emoji: "⛅", color: "#38bdf8" }
   ];
 
-  // Stark vereinfachte, selbst gezeichnete Icon-Formen (keine 1:1-Kopien der
-  // echten Logos), die an die jeweilige Seite erinnern. Werden zusammen mit
-  // einer von der echten Markenfarbe abweichenden Farbe (shiftHue) gezeichnet,
-  // damit man sie klar vom Original unterscheiden kann.
+  // Stark vereinfachte, selbst gezeichnete Icon-Formen (keine Kopien der
+  // echten Logos), die an die jeweilige Seite erinnern. Sie werden in den
+  // Markenfarben der Vorlage gezeichnet und dienen als Ersatz, wenn der
+  // Browser kein echtes Favicon der Seite im Cache hat.
   var LOGO_SHAPES = {
     "YouTube": { kind: "triangle" },
     "LinkedIn": { kind: "text", text: "in" },
-    "Microsoft Teams": { kind: "text", text: "T" },
     "GitHub": { kind: "github" },
     "GitLab": { kind: "fox" },
     "Stack Overflow": { kind: "stackedBars" },
@@ -53,6 +56,9 @@
     "Outlook": { kind: "envelope" },
     "Google Docs": { kind: "document" },
     "OneDrive": { kind: "cloud" },
+    "Steam": { kind: "steam" },
+    "Claude": { kind: "burst" },
+    "IKEA": { kind: "ikea", textColor: "#0058a3" },
     "Online-Banking": { kind: "bank" }
   };
 
@@ -77,74 +83,13 @@
     return null;
   }
 
-  // --- Farb-Hilfsfunktionen (nur für die Umfärbung der Logo-Formen) ---
+  // --- Farb-Hilfsfunktionen ---
 
   function hexToRgb(hex) {
     hex = String(hex || "#888888").replace("#", "");
     if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
     var num = parseInt(hex, 16) || 0;
     return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
-  }
-
-  function rgbToHex(r, g, b) {
-    return "#" + [r, g, b].map(function (v) {
-      v = Math.max(0, Math.min(255, Math.round(v)));
-      var s = v.toString(16);
-      return s.length === 1 ? "0" + s : s;
-    }).join("");
-  }
-
-  function rgbToHsl(r, g, b) {
-    r /= 255; g /= 255; b /= 255;
-    var max = Math.max(r, g, b), min = Math.min(r, g, b);
-    var h = 0, s = 0, l = (max + min) / 2;
-    if (max !== min) {
-      var d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-      else if (max === g) h = (b - r) / d + 2;
-      else h = (r - g) / d + 4;
-      h *= 60;
-    }
-    return { h: h, s: s, l: l };
-  }
-
-  function hue2rgb(p, q, t) {
-    if (t < 0) t += 1;
-    if (t > 1) t -= 1;
-    if (t < 1 / 6) return p + (q - p) * 6 * t;
-    if (t < 1 / 2) return q;
-    if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-    return p;
-  }
-
-  function hslToRgb(h, s, l) {
-    h = (((h % 360) + 360) % 360) / 360;
-    if (s === 0) {
-      var v = l * 255;
-      return { r: v, g: v, b: v };
-    }
-    var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    var p = 2 * l - q;
-    return {
-      r: hue2rgb(p, q, h + 1 / 3) * 255,
-      g: hue2rgb(p, q, h) * 255,
-      b: hue2rgb(p, q, h - 1 / 3) * 255
-    };
-  }
-
-  // Verschiebt den Farbton der (ungefähren) echten Markenfarbe deutlich,
-  // damit die Tarn-Farbe klar vom Original unterscheidbar bleibt.
-  function shiftHue(hex, degrees) {
-    var rgb = hexToRgb(hex);
-    var hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-    var h = hsl.h + degrees;
-    var s = Math.max(hsl.s, 0.55);
-    var l = hsl.l;
-    if (l > 0.82) l = 0.55;
-    if (l < 0.18) l = 0.35;
-    var out = hslToRgb(h, s, l);
-    return rgbToHex(out.r, out.g, out.b);
   }
 
   function luminance(hex) {
@@ -310,6 +255,51 @@
         ctx.fillRect(c - size * 0.28, by, size * 0.62, size * 0.12);
         break;
       }
+      case "steam": {
+        var hx = c + size * 0.1, hy = c - size * 0.08;
+        ctx.lineCap = "round";
+        ctx.lineWidth = size * 0.07;
+        ctx.beginPath();
+        ctx.arc(hx, hy, size * 0.19, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(hx, hy, size * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.lineWidth = size * 0.09;
+        ctx.beginPath();
+        ctx.moveTo(hx - size * 0.12, hy + size * 0.12);
+        ctx.lineTo(c - size * 0.24, c + size * 0.22);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(c - size * 0.22, c + size * 0.2, size * 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      }
+      case "burst": {
+        ctx.lineCap = "round";
+        ctx.lineWidth = size * 0.075;
+        var rays = 12;
+        for (var k = 0; k < rays; k++) {
+          var ang = (Math.PI * 2 * k) / rays + 0.2;
+          var len = size * (k % 2 === 0 ? 0.34 : 0.26);
+          ctx.beginPath();
+          ctx.moveTo(c + Math.cos(ang) * size * 0.05, c + Math.sin(ang) * size * 0.05);
+          ctx.lineTo(c + Math.cos(ang) * len, c + Math.sin(ang) * len);
+          ctx.stroke();
+        }
+        break;
+      }
+      case "ikea": {
+        ctx.beginPath();
+        ctx.ellipse(c, c, size * 0.42, size * 0.25, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = shape.textColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "bold " + Math.floor(size * 0.24) + "px Verdana, Arial, sans-serif";
+        ctx.fillText("IKEA", c, c + size * 0.01);
+        break;
+      }
       case "bank": {
         var bw = size * 0.6;
         var bx = c - bw / 2;
@@ -382,18 +372,24 @@
       ? override.emoji.trim()
       : (matched ? matched.emoji : autoPreset.emoji);
 
-    var brandColor = matched ? matched.color : autoPreset.color;
-    var autoColor = shape
-      ? shiftHue(brandColor, 150)
-      : (matched ? matched.color : pick(COLORS, seed, 0x27d4eb2f));
-    var color = override.color || autoColor;
+    // Markenfarben der Vorlage; eigene Namen ohne Vorlage bekommen eine
+    // (je Hostname feste) Farbe aus COLORS.
+    var preset = matched;
+    var color = override.color || (preset ? preset.color : pick(COLORS, seed, 0x27d4eb2f));
+    var fgColor = shape ? ((preset && preset.fg) || contrastFg(color)) : null;
+
+    // Echtes Favicon nur, wenn die Maske einer Vorlage entspricht und kein
+    // eigenes Emoji gesetzt wurde.
+    var customEmoji = !!(override.emoji && override.emoji.trim());
+    var faviconUrl = preset && preset.url && !customEmoji ? preset.url : null;
 
     return {
       name: name,
       emoji: emoji,
       color: color,
       logoShape: shape,
-      fgColor: shape ? contrastFg(color) : null
+      fgColor: fgColor,
+      faviconUrl: faviconUrl
     };
   }
 

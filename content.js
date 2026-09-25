@@ -73,12 +73,37 @@
     });
   }
 
+  // Echtes Favicon der Tarnseite aus dem Browser-Cache holen; ohne Treffer
+  // wird das gezeichnete Logo verwendet.
+  function resolveFavicon(mask, cb) {
+    if (!mask.faviconUrl) {
+      cb(null);
+      return;
+    }
+    try {
+      chrome.runtime.sendMessage({ type: "GET_FAVICON", pageUrl: mask.faviconUrl }, function (response) {
+        cb(!chrome.runtime.lastError && response ? response.dataUrl : null);
+      });
+    } catch (e) {
+      cb(null);
+    }
+  }
+
   function applyMask(mask) {
     ensureHead(function () {
       currentMaskName = mask.name;
       currentFaviconHref = buildFaviconDataUrl(mask, 64);
       reassert();
       watchForReverts();
+
+      // Gezeichnetes Logo sofort setzen, damit der echte Titel/das echte
+      // Favicon nicht länger sichtbar sind; das echte Favicon der Tarnseite
+      // ersetzt es, sobald es aus dem Cache geladen ist.
+      resolveFavicon(mask, function (realFavicon) {
+        if (!realFavicon) return;
+        currentFaviconHref = realFavicon;
+        reassert();
+      });
 
       // Manche Seiten (v. a. Single-Page-Apps) setzen Titel/Favicon erst
       // nach dem eigentlichen Laden neu (z. B. für Benachrichtigungs-Badges).

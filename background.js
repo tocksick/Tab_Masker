@@ -155,7 +155,8 @@ async function computeMaskForHost(hostname) {
     emoji: mask.emoji,
     color: mask.color,
     logoShape: mask.logoShape,
-    fgColor: mask.fgColor
+    fgColor: mask.fgColor,
+    faviconUrl: mask.faviconUrl
   };
 }
 
@@ -180,6 +181,65 @@ async function reloadListedTabs() {
       chrome.tabs.reload(tab.id).catch(function () {});
     }
   });
+}
+
+// --- Echte Favicons aus dem Favicon-Cache des Browsers ---
+//
+// Über die "favicon"-Berechtigung liefert der Browser das gespeicherte
+// Favicon einer Seite (chrome-extension://<id>/_favicon/?pageUrl=…).
+// Kennt er die Seite nicht, kommt ein Standard-Symbol zurück – das wird
+// erkannt, damit dann das gezeichnete Logo als Ersatz greift.
+
+var FAVICON_SIZE = 32;
+var faviconCache = {};
+var defaultFaviconPromise = null;
+
+function faviconEndpoint(pageUrl) {
+  return chrome.runtime.getURL("/_favicon/") +
+    "?pageUrl=" + encodeURIComponent(pageUrl) + "&size=" + FAVICON_SIZE;
+}
+
+async function fetchFaviconBytes(pageUrl) {
+  var res = await fetch(faviconEndpoint(pageUrl));
+  if (!res.ok) throw new Error("Favicon " + res.status);
+  return {
+    type: res.headers.get("content-type") || "image/png",
+    bytes: new Uint8Array(await res.arrayBuffer())
+  };
+}
+
+function sameBytes(a, b) {
+  if (a.length !== b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function toDataUrl(type, bytes) {
+  var binary = "";
+  for (var i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return "data:" + type + ";base64," + btoa(binary);
+}
+
+// Gibt eine Data-URL des echten Favicons zurück oder null, wenn der
+// Browser für diese Seite keines gespeichert hat.
+async function getRealFavicon(pageUrl) {
+  if (faviconCache[pageUrl]) return faviconCache[pageUrl];
+  try {
+    if (!defaultFaviconPromise) {
+      defaultFaviconPromise = fetchFaviconBytes("https://tabmasker.invalid/");
+    }
+    var fallback = await defaultFaviconPromise;
+    var icon = await fetchFaviconBytes(pageUrl);
+    if (icon.bytes.length === 0 || sameBytes(icon.bytes, fallback.bytes)) return null;
+    faviconCache[pageUrl] = toDataUrl(icon.type, icon.bytes);
+    return faviconCache[pageUrl];
+  } catch (e) {
+    defaultFaviconPromise = null;
+    console.warn("Tab Masker: Favicon nicht abrufbar:", e);
+    return null;
+  }
 }
 
 // --- Zugriff nur auf gelistete Domains ---
@@ -310,6 +370,10 @@ async function handleMessage(message, sender) {
   switch (message.type) {
     case "GET_MASK_FOR_HOST": {
       return computeMaskForHost(message.hostname);
+    }
+
+    case "GET_FAVICON": {
+      return { dataUrl: message.pageUrl ? await getRealFavicon(message.pageUrl) : null };
     }
 
     case "GET_STATE": {

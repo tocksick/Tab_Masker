@@ -37,6 +37,22 @@ function sendMessage(message) {
   });
 }
 
+// Ersetzt das gezeichnete Logo durch das echte Favicon der Tarnseite,
+// falls der Browser es im Cache hat (wie im Tab selbst, siehe content.js).
+function showRealFavicon(container, mask, size) {
+  if (!mask.faviconUrl) return;
+  sendMessage({ type: "GET_FAVICON", pageUrl: mask.faviconUrl }).then(function (response) {
+    if (!response || !response.dataUrl) return;
+    var img = document.createElement("img");
+    img.src = response.dataUrl;
+    img.width = size;
+    img.height = size;
+    img.alt = "";
+    container.innerHTML = "";
+    container.appendChild(img);
+  });
+}
+
 function renderPreview(mask) {
   var iconEl = qs("previewIcon");
   iconEl.innerHTML = "";
@@ -46,6 +62,7 @@ function renderPreview(mask) {
     canvas.height = 42;
     TabMaskerCore.renderIcon(canvas.getContext("2d"), mask, 42);
     iconEl.appendChild(canvas);
+    showRealFavicon(iconEl, mask, 42);
   } else {
     iconEl.textContent = "🎭";
   }
