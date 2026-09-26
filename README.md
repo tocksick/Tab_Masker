@@ -1,5 +1,7 @@
 # Tab Masker
 
+![Downloads](https://img.shields.io/github/downloads/tocksick/tab_masker/total)
+
 Chrome-Erweiterung (Manifest V3), die Domainnamen und Favicons in Browser-Tabs mit
 zufälligen, aber pro Domain konsistenten Namen und Icons maskiert – praktisch für
 Screensharing, Präsentationen oder öffentliche Bildschirme.
